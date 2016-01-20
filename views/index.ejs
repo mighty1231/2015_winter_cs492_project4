@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+<head>
+    <title>Unity-chan!</title>
+    <script src="socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"> <!-- load bootstrap css -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css"> <!-- load fontawesome -->
+    <style>
+        body        { padding-top:80px; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="jumbotron text-center">
+        <h1><span class="fa fa-lock"></span> Unity-chan!</h1>
+
+    <% if (!authenticated) { %>
+        <p>Login or Register with:</p>
+
+        <a href="/login" class="btn btn-default"><span class="fa fa-user"></span> Login</a>
+        <a href="/signup" class="btn btn-default"><span class="fa fa-user"></span> Signup</a>
+    <% } else { %>
+
+        <p> Hi! <%= user.local.email %> </p>
+        <a href="/profile" class="btn btn-default"><span class="fa fa-user"></span> View Profile</a>
+        <a href="/logout" class="btn btn-default"><span class="fa fa-times"></span> Logout</a>
+
+        <br>
+        <span id="messages"></span>
+        <script type="text/javascript">
+            var socket = io.connect('');
+
+            var log_count = 0;
+            var log_max = 10;
+            var keyDict = {
+                "32":"space", "39":"right", "37":"left", "38":"up", "40":"down", "17":"control", "13":"enter",
+                "65":"a",
+                "83":"s",
+                "68":"d",
+                "87":"w",
+                "90":"z"
+            };
+            document.body.onkeydown = function(event) {
+                log_count = log_count + 1;
+                if (keyDict.hasOwnProperty(event.which)){
+                    logUpdate("KEYDOWN: " + keyDict[event.which] + "<br>");
+                }
+            };
+            document.body.onkeyup = function(event) {
+                log_count = log_count + 1;
+                if (keyDict.hasOwnProperty(event.which)){
+                    logUpdate("KEYUP: " + keyDict[event.which] + "<br>"); // String.toUpperCase()
+                }
+            };
+            var logUpdate = function(sss) {
+                var tmp = document.getElementById('messages').innerHTML + sss;
+                if (log_count > log_max) {
+                    tmp = tmp.substring(tmp.search("<[ ]*[Bb][Rr][ ]*>"));
+                    tmp = tmp.substring(tmp.search(">")+1);
+                }
+                document.getElementById('messages').innerHTML = tmp;
+            };
+
+        </script>
+    <% } %>
+    </div>
+
+</div>
+</body>
+</html>
