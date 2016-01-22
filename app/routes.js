@@ -1,5 +1,5 @@
 // app/routes.js
-module.exports = function(app, jwt, secretKey) {
+module.exports = function(app, encode, decode) {
     // token : 
     /* GET /index/:token
      *     if (token is not valid || token.email is not on db)
@@ -26,7 +26,6 @@ module.exports = function(app, jwt, secretKey) {
      *         no password : render 'login.ejs' with message: Wrong
      *         make token and redirect to /index/token
      */
-    var jwt  = require('jsonwebtoken');
     var User = require('../app/models/user');
 
     app.get('/', function (req, res) {
@@ -41,10 +40,12 @@ module.exports = function(app, jwt, secretKey) {
         res.render('login.ejs', {message : req.params.message});
     });
 
-    app.post('/login', function (req, res, next) {
+    /* For keyboard input */
+    app.post('/login', function (req, res) {
         process.nextTick(function() {
             User.findOne({'email' : req.body.email}, function(err, user) {
                 if (err){
+                    console.log('/login error');
                     console.log(err);
                 }
                 else if (!user) {
@@ -52,30 +53,58 @@ module.exports = function(app, jwt, secretKey) {
                 } else if (!user.validPassword(req.body.password)) {
                     res.render('login.ejs', {message : 'Oops! Wrong password.'})
                 } else {
-                    var token = jwt.sign({email: req.body.email, nickname: user.nickname}, secretKey);
-                    jwt.sign ({email: req.body.email, nickname: user.nickname}, secretKey, {}, function (token) {
-                        res.redirect('/index/'+token);
-                    });
+                    encode ({email: user.email, nickname: user.nickname, inGame: false},
+                        function (token) {
+                            res.redirect('/index/'+token);
+                        });
                 }
             });
         });
     });
+
+    /* For game */
+    app.get('/inGame/login', function (req, res) {
+        if (!req.query.e || !req.query.p) {
+            res.send({status:'Error', message:'Wrong query'});
+        } else {
+            process.nextTick(function() {
+                User.findOne({'email':req.query.e}, function (err, user) {
+                    if (err) {
+                        console.log('/inGame/login error');
+                        res.send({status:'Error'});
+                    } else if (!user) {
+                        res.send({status:'Error', message:'No User'});
+                    } else if (!user.validPassword(req.query.p)) {
+                        res.send({status:'Error', message:'Wrong password'});
+                    } else {
+                        encode({email: user.email, nickname: user.nickname, inGame: true},
+                            function(token) {
+                                res.send({status:'Success', message:'Login Success', token:token});
+                            }
+                        );
+                    }
+                })
+            })
+        }
+    });
+
+    /* Game information */
+    // app.get('/inGame/')
+
 
     app.get('/index', function (req, res) {
         res.redirect('/login');
     });
 
     app.get('/index/:token', function (req, res) {
-        jwt.verify (req.params.token, secretKey, function (err, decoded) {
-            if (!err && decoded && decoded.email && decoded.nickname) {
-                res.render('index.ejs',
-                    {nickname: decoded.nickname, 
-                     onGame: 'OFF',
-                     connectionCount: 0,
-                     token: req.params.token});
-            } else {
-                res.redirect('/login/token%20error');
+        decode (req.params.token, function (decoded, failed) {
+            if (!decoded.email || !decoded.nickname || decoded.inGame == true) {
+                failed();
             }
+            res.render('index.ejs',
+                {nickname: decoded.nickname, onGame: 'OFF', connectionCount: 0, token: req.params.token});
+        }, function () {
+            res.redirect('/login/token%20error');
         });
     });
 

@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"> <!-- load bootstrap css -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css"> <!-- load fontawesome -->
     <style>
-        body        { padding-top:80px; }
+        body        { padding-top:50px; }
     </style>
 </head>
 <body>
@@ -25,29 +25,29 @@
 
         document.body.onkeydown = function(event) {
             if (keyDict.hasOwnProperty(event.which)){
-                logUpdate('client', 'KEYDOWN: ' + keyDict[event.which] + '<br>');
+                logUpdate('client', keyDict[event.which].toUpperCase() + '<i class="fa fa-hand-o-up"></i><br>');
             }
         };
         document.body.onkeyup = function(event) {
             if (keyDict.hasOwnProperty(event.which)){
-                logUpdate('client', 'KEYUP: ' + keyDict[event.which] + '<br>'); // String.toUpperCase()
+                logUpdate('client', keyDict[event.which].toUpperCase() + '<i class="fa fa-hand-o-down"></i><br>'); // String.toUpperCase()
             }
         };
 
         /* MAIN LOGIC */
         socket.on('connectionInfo', function (data) {
-            document.getElementById('mainMsgBox').innerHTML = 'Server connected<br>';
+            document.getElementById('mainMsgBox').innerHTML = '<i class="fa fa-server"></i> Server Status <i class="fa fa-smile-o"></i><br>';
 
             // change keyboard event listener
             document.body.onkeydown = function(event) {
                 if (keyDict.hasOwnProperty(event.which)){
-                    logUpdate('client', 'KEYDOWN: ' + keyDict[event.which] + '<br>');
+                    logUpdate('client', keyDict[event.which].toUpperCase() + '<i class="fa fa-hand-o-up"></i><br>');
                     socket.emit('keyEvent', {key:keyDict[event.which], updown:'down'});
                 }
             };
             document.body.onkeyup = function(event) {
                 if (keyDict.hasOwnProperty(event.which)){
-                    logUpdate('client', 'KEYUP: ' + keyDict[event.which] + '<br>'); // String.toUpperCase()
+                    logUpdate('client', keyDict[event.which].toUpperCase() + '<i class="fa fa-hand-o-down"></i><br>'); // String.toUpperCase()
                     socket.emit('keyEvent', {key:keyDict[event.which], updown:'up'});
                 }
             };
@@ -59,16 +59,16 @@
 
         /* KEY EVENT */
         socket.on('keyEvent', function (data) {
-            logUpdate('server', 'Keyboard input: '+data.key+ ' ' + data.updown+'<br>');
+            logUpdate('server', data.key.toUpperCase() + '<i class="fa fa-hand-o-'+data.updown+'"></i><br>');
         });
 
 
         socket.on('disconnect', function (data) {
             if (data.message) {
-                document.getElementById('mainMsgBox').innerHTML = 'Server disconnected(%s)<br>'.format(data.message);
+                document.getElementById('mainMsgBox').innerHTML = '<i class="fa fa-server"></i> Server Status <i class="fa fa-frown-o"></i>(%s)<br>'.format(data.message);
             }
             else {
-                document.getElementById('mainMsgBox').innerHTML = 'Server disconnected<br>';
+                document.getElementById('mainMsgBox').innerHTML = '<i class="fa fa-server"></i> Server Status <i class="fa fa-frown-o"></i><br>';
             }
         });
 
@@ -86,37 +86,30 @@
 <div class="container">
 
     <div class="jumbotron text-center">
-        <h1><span class="fa fa-lock"></span> Unity-chan!</h1>
+        <h1><i class="fa fa-star-o"></i> Unity-chan!</h1>
 
 
         <p> Hi! <%= nickname %> </p>
-        <a href="/profile" class="btn btn-default"><span class="fa fa-user"></span> View Profile</a>
-        <a href="/logout" class="btn btn-default"><span class="fa fa-times"></span> Logout</a>
-
-        <br>
+        <!-- <a href="/profile" class="btn btn-default"><span class="fa fa-user"></span> View Profile</a> -->
+        <!-- <a href="/logout" class="btn btn-default"><span class="fa fa-times"></span> Logout</a> -->
         <div class="row">
-            <span id="mainMsgBox"></span>
+            <p><span id="mainMsgBox"></span></p>
         </div>
-        <div class="row">
-            <div class="col-sm-6">
-                OnGame: <span id="onGame"><%= onGame %></span>
-            </div>
-            <div class="col-sm-6">
-                ConnectionCount: <span id="connectionCount"><%= connectionCount %></span>
-            </div>
-        </div>
-        <div class="row"> 
-            <div class="col-sm-12 col-md-6">
-                [Client side inputs] <br>
-                <span id="client"></span>
-            </div>
-            <div class="col-sm-12 col-md-6">
-                [Server received] (developing...) <br>
-                <span id="server"></span>
-            </div>
+        <p>OnGame: <span id="onGame"><%= onGame %></span></p>
+        <p>ConnectionCount: <span id="connectionCount"><%= connectionCount %></span></p>
+    </div>
+    <div class="col-sm-12 col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">Client side inputs</div>
+            <div class="panel-body"><span id="client"></span></div>
         </div>
     </div>
-
+    <div class="col-sm-12 col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">Server inputs</div>
+            <div class="panel-body"><span id="server"></span></div>
+        </div>
+    </div>
 </div>
 </body>
 </html>
