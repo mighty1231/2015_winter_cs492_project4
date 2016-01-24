@@ -27,6 +27,7 @@ module.exports = function(app, encode, decode) {
      *         make token and redirect to /index/token
      */
     var User = require('../app/models/user');
+    var Character = require('../app/models/character');
 
     app.get('/', function (req, res) {
         res.redirect('/login');
@@ -62,31 +63,34 @@ module.exports = function(app, encode, decode) {
         });
     });
 
-    /* For game */
-    app.get('/inGame/login', function (req, res) {
-        if (!req.query.e || !req.query.p) {
-            res.send({status:'Error', message:'Wrong query'});
-        } else {
-            process.nextTick(function() {
-                User.findOne({'email':req.query.e}, function (err, user) {
-                    if (err) {
-                        console.log('/inGame/login error');
-                        res.send({status:'Error'});
-                    } else if (!user) {
-                        res.send({status:'Error', message:'No User'});
-                    } else if (!user.validPassword(req.query.p)) {
-                        res.send({status:'Error', message:'Wrong password'});
-                    } else {
-                        encode({email: user.email, nickname: user.nickname, inGame: true},
-                            function(token) {
-                                res.send({status:'Success', message:'Login Success', token:token});
-                            }
-                        );
-                    }
-                })
-            })
-        }
-    });
+    // /* For game */
+    // app.get('/inGame/login', function (req, res) {
+    //     if (!req.query.e || !req.query.p) {
+    //         console.log('e = '+req.query.e);
+
+    //         console.log('p = '+req.query.p);
+    //         res.send({status:'Error', message:'Wrong query'});
+    //     } else {
+    //         process.nextTick(function() {
+    //             User.findOne({'email':req.query.e}, function (err, user) {
+    //                 if (err) {
+    //                     console.log('/inGame/login error');
+    //                     res.send({status:'Error', message:''});
+    //                 } else if (!user) {
+    //                     res.send({status:'Error', message:'No User'});
+    //                 } else if (!user.validPassword(req.query.p)) {
+    //                     res.send({status:'Error', message:'Wrong password'});
+    //                 } else {
+    //                     encode({email: user.email, nickname: user.nickname, inGame: true},
+    //                         function(token) {
+    //                             res.send({status:'Success', message:'Login Success', token:token});
+    //                         }
+    //                     );
+    //                 }
+    //             })
+    //         })
+    //     }
+    // });
 
     /* Game information */
     // app.get('/inGame/')
@@ -106,6 +110,46 @@ module.exports = function(app, encode, decode) {
         }, function () {
             res.redirect('/login/token%20error');
         });
+    });
+
+    // signup
+    app.get('/signup', function(req, res) {
+        res.render('signup.ejs', {message:''});
+    });
+
+    app.post('/signup', function(req, res) {
+        if (req.body.email) {
+            process.nextTick(function() {
+                User.findOne({'email':req.body.email}, function (err, user) {
+                    if (user) {
+                        res.render('signup.ejs', {message:'Given email already exists'});
+                    } else if (req.body.password.length < 4) {
+                        res.render('signup.ejs', {message: 'password length must be longer than 3'});
+                    } else {
+                        var newUser      = new User();
+                        newUser.email    = req.body.email;
+                        newUser.password = newUser.generateHash(req.body.password);
+                        newUser.nickname = req.body.nickname;
+
+                        // save the user
+                        newUser.save(function(err) {
+                            if (err)
+                                throw err;
+                            var newCharacter      = new Character();
+                            newCharacter.email    = req.body.email;
+                            newCharacter.nickname = req.body.nickname;
+                            newCharacter.status   = '';
+                            newCharacter.save(function(err) {
+                                if (err)
+                                    throw err;
+                                // done
+                                res.redirect('/login');
+                            })
+                        });
+                    }
+                })
+            })
+        }
     });
 
     // // =====================================
