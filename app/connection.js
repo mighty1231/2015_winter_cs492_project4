@@ -41,6 +41,7 @@ module.exports = function (io, encode, decode, connectionInfo) {
                     sendKeyboardEvents(io, connectionInfo, socket.email, data);
                 });
             }, function() {
+                console.log('decoding token failed');
                 socket.disconnect('unauthorized');
             });
         }
@@ -54,9 +55,11 @@ module.exports = function (io, encode, decode, connectionInfo) {
                                 console.log('inGame: login error');
                                 socket.emit('unauthorized', 'User not found');
                             } else if (!user.validPassword(data.password)) {
+                                console.log('inGame: login error');
                                 socket.emit('unauthorized', 'Wrong password');
                             } else {
-                                socket.emit('authorized', user.nickname);
+                                console.log('inGame: authorized');
+                                socket.emit('authorized', {email:user.email, nickname:user.nickname});
 
                                 socket.on('disconnect', function () {
                                     console.info('Socket [%s] disconnected.', socket.id);
@@ -80,34 +83,40 @@ module.exports = function (io, encode, decode, connectionInfo) {
                                 // socket.on('somethingFromGame', function (data) {});
 
                                 socket.on('saveGame', function(data) {
-                                    Character.findOne({'email':socket.email}, function (err, character) {
-                                        if (err) {
-                                            console.log('connection.js on saveGame error');
-                                            throw err;
-                                        }
-                                        else {
-                                            character.status = data;
-                                            
-                                            character.save(function(err) {
-                                                if (err) {
-                                                    console.log('connection.js on saveGame error (2)');
-                                                    throw err;
-                                                }
-                                            });
-                                        }
+                                    console.log('saveGame called');
+                                    process.nextTick(function() {
+                                        Character.findOne({'email':socket.email}, function (err, character) {
+                                            if (err) {
+                                                console.log('connection.js on saveGame error');
+                                                throw err;
+                                            }
+                                            else {
+                                                character.status = data.status;
+                                                
+                                                character.save(function(err) {
+                                                    if (err) {
+                                                        console.log('connection.js on saveGame error (2)');
+                                                        throw err;
+                                                    }
+                                                });
+                                            }
+                                        });
                                     });
                                 });
 
                                 socket.on('loadGame', function(data) {
-                                    Character.findOne({'email':socket.email}, function (err, character) {
-                                        if (err) {
-                                            console.log('connection.js on loadGame error');
-                                            throw err;
-                                        }
-                                        else {
-                                            socket.emit('loadGameRes', character.status);
-                                        }
-                                    })
+                                    console.log('loadgame called');
+                                    process.nextTick(function() {
+                                        Character.findOne({'email':socket.email}, function (err, character) {
+                                            if (err) {
+                                                console.log('connection.js on loadGame error');
+                                                throw err;
+                                            }
+                                            else {
+                                                socket.emit('loadGameRes', {status:character.status});
+                                            }
+                                        })
+                                    });
                                 });
                                 // }
                             }
@@ -137,7 +146,7 @@ function refreshConnectionInfo(io, connectionInfo, email) {
 function sendKeyboardEvents(io, connectionInfo, email, data) {
     connectionCount = connectionInfo[email].inputs.length;
     if (connectionInfo[email].onGame) {
-        io.sockets.connceted[connectionInfo[email].onGame].emit('keyEvent', data);
+        io.sockets.connected[connectionInfo[email].onGame].emit('keyEvent', data);
     }
     for (var i = 0; i < connectionCount; i++) {
         var sid = connectionInfo[email].inputs[i];
