@@ -33,7 +33,6 @@ var totalConnectionInfo = {}; // {email(String) : {onGame: socket, inputs: socke
 var jwtfunction = require('./app/jwt.js');
 
 // routes ======================================================================
-require('./app/routes.js')(app, jwtfunction.encode, jwtfunction.decode); // load our routes and pass in our app and fully configured passport
 // require('./config/passport')(passport); // pass passport for configuration
 
 // launch ======================================================================
@@ -42,5 +41,7 @@ var httpServer = http.createServer(app).listen(port, function (req, res) {
 });
 
 var io = require('socket.io').listen(httpServer);
+
+require('./app/routes.js')(app, jwtfunction.encode, jwtfunction.decode, totalConnectionInfo, io); // load our routes and pass in our app and fully configured passport
 
 require('./app/connection.js')(io, jwtfunction.encode, jwtfunction.decode, totalConnectionInfo);

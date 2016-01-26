@@ -7,27 +7,23 @@ var characterSchema = mongoose.Schema({
 
     email        : String,
     nickname     : String,
-    status       : String // json object.
+    
+    // status       : String // json object.
+    status : {
+        scene    : String,
+        onBroom  : Boolean,
 
-    // facebook         : {
-    //     id           : String,
-    //     token        : String,
-    //     email        : String,
-    //     name         : String
-    // },
-    // twitter          : {
-    //     id           : String,
-    //     token        : String,
-    //     displayName  : String,
-    //     username     : String
-    // },
-    // google           : {
-    //     id           : String,
-    //     token        : String,
-    //     email        : String,
-    //     name         : String
-    // }
-
+        position : {
+            x    : Number,
+            y    : Number,
+            z    : Number
+        },
+        rotation : {
+            x    : Number,
+            y    : Number,
+            z    : Number
+        }
+    }
 });
 
 // create the model for users and expose it to our app

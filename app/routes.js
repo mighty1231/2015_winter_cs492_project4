@@ -1,5 +1,5 @@
 // app/routes.js
-module.exports = function(app, encode, decode) {
+module.exports = function(app, encode, decode, connectionInfo, io) {
     // token : 
     /* GET /index/:token
      *     if (token is not valid || token.email is not on db)
@@ -13,7 +13,7 @@ module.exports = function(app, encode, decode) {
      *     emit "connection" var s = io('', {query: "token=%s" % token}) || io.use(function(socket, next) {socket.request._query['token']}) -> email
      *     emit "keyevent", {key: key, jwt: jwt}
      *     emit "disconnect", || delete connection information
-     *     receive "connectioninfo", {inGame : boolean, connected keyboard sockets = (array of socket ids)}
+     *     receive "connectionInfo", {inGame : boolean, connected keyboard sockets = (array of socket ids)}
      *
      * GET /
      *     redirect to /login
@@ -61,6 +61,45 @@ module.exports = function(app, encode, decode) {
                 }
             });
         });
+    });
+
+    // unitychan voice recognition
+    app.post('/abc', function (req, res) {
+        if(req.body.email && req.body.msg) {
+            console.log('nice post : email[%s], msg[%s]', req.body.email, req.body.msg);
+            var sid = connectionInfo[req.body.email].onGame;
+            if (sid != null) {
+                if (req.body.msg == 'avadakedavra') {
+                    console.log("voice recognition, send successfully");
+                    io.sockets.connected[sid].emit('keyEvent', {key:'z', updown:'down'});
+                    setTimeout( function () {
+                        io.sockets.connected[sid].emit('keyEvent', {key:'z', updown:'up'});
+                    }, 400);
+                } else if (req.body.msg == 'what is your name'){
+                    res.send({msg:"my name is unity chan"});
+                    io.sockets.connected[sid].emit('face', {type:'smile'});
+                } else if (req.body.msg == 'hello') {
+                    res.send({msg:"An nyong ha sae yo . . op pa"});
+                    io.sockets.connected[sid].emit('face', {type:'smile'});
+                } else if (req.body.msg == 'i love you') {
+                    res.send({msg:"i hate you"});
+                    io.sockets.connected[sid].emit('face', {type:'distract'});
+                } else if (req.body.msg == 'where are you from') {
+                    res.send({msg:"i am from japan"});
+                    io.sockets.connected[sid].emit('face', {type:'smile'});
+                } else if (req.body.msg == 'look at me') {
+                    res.send({msg:"why"});
+                    io.sockets.connected[sid].emit('face', {type:'sap'});
+                } else{
+                    res.send({msg:"I don't understand you"});
+                }
+            } else {
+                res.send({msg:"Server connection is wrong"});
+            }
+        } else {
+            console.log('wierd post : email[%s], msg[%s]', req.body.email, req.body.msg);
+        }
+        res.end();
     });
 
     // /* For game */
@@ -138,7 +177,16 @@ module.exports = function(app, encode, decode) {
                             var newCharacter      = new Character();
                             newCharacter.email    = req.body.email;
                             newCharacter.nickname = req.body.nickname;
-                            newCharacter.status   = '';
+
+                            newCharacter.status.scene = 'CastleOutside';
+                            newCharacter.status.onBroom = false;
+                            newCharacter.status.position.x = 1889;
+                            newCharacter.status.position.y = 73;
+                            newCharacter.status.position.z = 1071;
+                            newCharacter.status.rotation.x = 0;
+                            newCharacter.status.rotation.y = -159;
+                            newCharacter.status.rotation.z = 0;
+
                             newCharacter.save(function(err) {
                                 if (err)
                                     throw err;
